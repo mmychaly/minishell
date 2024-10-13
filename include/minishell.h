@@ -20,7 +20,7 @@ typedef struct s_command
 	int is_pipe;       // Флаг для пайпа
 }			t_command;
 
-t_command	**parse_pipeline(char *input);
+t_command	*parse_pipeline(char *input);
 // void	execute_pipeline(char ***commands, char **envp);
 void		free_parsed_commands(t_command **commands);
 t_command	*parse_input(char *input);
@@ -31,6 +31,6 @@ void		launch_here_doc(char **argv, int pipefd[2]);
 void		ft_redirection_in(char *input_file);
 void		ft_redirection_out_append(char *output_file);
 void		ft_redirection_out(char *output_file);
-void		execute_pipeline(t_command **commands, char **envp, int num_cmds);
+void		execute_pipeline(t_command *commands, char **envp);
 
 #endif

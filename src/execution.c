@@ -35,16 +35,16 @@ void execute_command(t_command *cmd, char **envp, int pipefd[2])
 
 
 // Main function to handle pipeline execution with pipes and redirections
-void execute_pipeline(t_command **commands, char **envp, int num_cmds)
+void execute_pipeline(t_command *commands, char **envp)
 {
     int pipefd[2];
     int prev_pipe = -1;
     int i = 0;
 
-    while (i < num_cmds)
+    while (commands->args[i])
     {
         // Создаем пайп только если это не последняя команда
-        if (i != num_cmds - 1)
+        if (commands->args[i+1] != NULL)
         {
             if (pipe(pipefd) == -1)  // Убедитесь, что pipe успешно создан
                 error_exit("pipe error");
@@ -66,7 +66,7 @@ void execute_pipeline(t_command **commands, char **envp, int num_cmds)
                 dup2(prev_pipe, STDIN_FILENO);  // Используем вывод предыдущей команды как ввод
                 close(prev_pipe);  // Закрываем старый файловый дескриптор только после использования
             }
-            if (i != num_cmds - 1) {
+            if (commands->args[i+1] != NULL) {
                 dup2(pipefd[1], STDOUT_FILENO);  // Перенаправляем вывод на следующую команду
                 close(pipefd[1]);  // Закрываем только дескриптор записи
             }
@@ -74,7 +74,7 @@ void execute_pipeline(t_command **commands, char **envp, int num_cmds)
                 close(pipefd[0]);  // Закрываем дескриптор чтения, если пайп был создан
             }
 
-            execute_command(commands[i], envp, pipefd);  // Выполняем команду
+            execute_command(commands, envp, pipefd);  // Выполняем команду
         }
         else  // Родительский процесс
         {

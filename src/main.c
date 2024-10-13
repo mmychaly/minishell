@@ -6,7 +6,7 @@
 /*   By: artemii <artemii@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/05 16:16:35 by azakharo          #+#    #+#             */
-/*   Updated: 2024/10/10 01:04:54 by artemii          ###   ########.fr       */
+/*   Updated: 2024/10/13 23:47:58 by artemii          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,57 +14,59 @@
 
 extern char	**environ;
 
-static void cleanup(t_command **commands, char *input)
-{
-    // Освобождаем массив структур команд
-    free_parsed_commands(commands);
+// static void cleanup(t_command **commands, char *input)
+//{
+//    // Освобождаем массив структур команд
+//    free_parsed_commands(commands);
 
-    // Освобождаем введённую строку
-    free(input);
-}
-void	print_commands(char ***commands)
+//    // Освобождаем введённую строку
+//    free(input);
+//}
+
+void	free_commands(t_command *cmd)
 {
 	int	i;
-	int	j;
 
-	i = 0;
-	j = 0;
-	while (commands[i] != NULL)
+	if (cmd->args)
 	{
-		printf("Command %d:\n", i);
-		j = 0;
-		while (commands[i][j] != NULL)
+		i = 0;
+		while (cmd->args[i])
 		{
-			printf("  Arg %d: %s\n", j, commands[i][j]);
-			j++;
+			free(cmd->args[i]);
+			i++;
 		}
-		i++;
+		free(cmd->args);
 	}
+	if (cmd->input_file)
+		free(cmd->input_file);
+	if (cmd->output_file)
+		free(cmd->output_file);
+	free(cmd);
 }
 
 int	main(void)
 {
-	char		*input;
-	t_command	**commands;
+	char		*user_input;
 	char		**envp;
-	int			num_cmds;
+	t_command	*commands;
 
 	envp = environ;
 	while (1)
 	{
-		input = readline("minishell$ ");
-		if (!input)
+		user_input = readline("minishell$ ");
+		if (!user_input)
 			break ;
-		if (ft_strlen(input) > 0)
-			add_history(input);
-		commands = parse_pipeline(input);
-		num_cmds = 0;
-		while (commands[num_cmds] != NULL)
-			num_cmds++;
-		// Вызываем execute_pipeline с количеством команд
+		if (ft_strlen(user_input) > 0)
+			add_history(user_input);
+		// Парсим введённую строку и получаем структуру команды
+		commands = parse_pipeline(user_input);
 		if (commands)
-			execute_pipeline(commands, envp, num_cmds);
-		cleanup(commands, input);
+		{
+			execute_pipeline(commands, envp);
+			free_commands(commands);
+			// Функция для освобождения структуры команды
+			free(user_input);
+		}
 	}
 	rl_clear_history();
 	return (0);
