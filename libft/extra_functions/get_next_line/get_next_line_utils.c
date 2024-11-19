@@ -6,7 +6,7 @@
 /*   By: artemii <artemii@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/30 16:34:15 by azakharo          #+#    #+#             */
-/*   Updated: 2024/10/10 01:27:34 by artemii          ###   ########.fr       */
+/*   Updated: 2024/10/25 00:32:39 by artemii          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -82,28 +82,28 @@ char	*ft_strchr(const char *str, int c)
 //	return (result_string);
 //}
 
-char	*ft_substr(char const *s, unsigned int start, size_t len)
-{
-	char	*substring;
-	size_t	i;
-	size_t	s_len;
+//char	*ft_substr(char const *s, unsigned int start, size_t len)
+//{
+//	char	*substring;
+//	size_t	i;
+//	size_t	s_len;
 
-	if (!s)
-		return (NULL);
-	s_len = ft_strlen(s);
-	if (start >= s_len)
-		return (ft_strdup(""));
-	if (len > s_len - start)
-		len = s_len - start;
-	substring = malloc(sizeof(char) * (len + 1));
-	if (!substring)
-		return (NULL);
-	i = 0;
-	while (i < len)
-	{
-		substring[i] = s[start + i];
-		i++;
-	}
-	substring[i] = '\0';
-	return (substring);
-}
+//	if (!s)
+//		return (NULL);
+//	s_len = ft_strlen(s);
+//	if (start >= s_len)
+//		return (ft_strdup(""));
+//	if (len > s_len - start)
+//		len = s_len - start;
+//	substring = malloc(sizeof(char) * (len + 1));
+//	if (!substring)
+//		return (NULL);
+//	i = 0;
+//	while (i < len)
+//	{
+//		substring[i] = s[start + i];
+//		i++;
+//	}
+//	substring[i] = '\0';
+//	return (substring);
+//}

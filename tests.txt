@@ -1,0 +1,64 @@
+# Test 1: Single quotes prevent interpretation of special characters
+input: echo 'Special characters: $USER; ls;'
+expected: Special characters: $USER; ls;
+
+# Test 2: Double quotes allow variable expansion but prevent interpretation of other metacharacters
+input: echo "Home directory: $HOME"
+expected: Home directory: /home/artemii
+
+# Test 3: Escaped special characters within double quotes
+input: echo \$HOME
+expected: $HOME
+
+# Test 4: Semicolon at the end of the line
+input: echo This is a test ;
+expected: This is a test ;
+
+# Test 5: Backslash at the end of the line (line continuation)
+input: echo This is a test \
+expected: This is a test 
+
+# Test 6: Unclosed single quote
+input: echo "directory is $HOME"
+expected: directory is /home/artemii
+
+# Test 7: Unclosed double quote
+input: echo 'directory is $HOME'
+expected: directory is $HOME
+
+# Test 8: Mixed quotes to produce a single word
+input: "e"'c'ho 'b'"o"nj"o"'u'r 
+expected: bonjour
+
+# Test 9: Mixed quotes to produce a single word
+input: echo 'Home is "$HOME"' 
+expected: Home is "$HOME"
+
+# Test 10: Mixed quotes to produce a single word
+input: echo $USER$var\$USER$USER\$USERtest$USER 
+expected: artemii$USERartemii$USERtestartemii
+
+# Test 11: Error: unclosed quotes '
+input: echo 'hello 
+expected: Error: unclosed quotes
+
+# Test 12: Error: unclosed quotes "
+input: echo "hello 
+expected: Error: unclosed quotes
+
+# Test 13: Print envp varuables
+input: echo $HOME and $USER is gay
+expected: /home/artemii and artemii is gay
+
+# Test 14: Print $?
+input: echo $?
+expected: 0
+
+# Test 15: Print $? in '' quotes
+input: echo '$?'
+expected: $?
+
+# Test 16: Print $? in "" quotes
+input: echo "$?"
+expected: 0
+
