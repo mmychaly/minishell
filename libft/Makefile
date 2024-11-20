@@ -6,7 +6,7 @@
 #    By: artemii <artemii@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/05/29 17:39:46 by azakharo          #+#    #+#              #
-#    Updated: 2024/10/10 01:26:30 by artemii          ###   ########.fr        #
+#    Updated: 2024/10/15 01:52:12 by artemii          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -28,6 +28,7 @@ SOURCES =	ft_atoi.c \
 			ft_memset.c \
 			ft_strchr.c \
 			ft_strdup.c \
+			ft_strndup.c \
 			ft_strlcat.c \
 			ft_strlcpy.c \
 			ft_strlen.c \

@@ -1,34 +1,31 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   launch_here_doc.c                                  :+:      :+:    :+:   */
+/*   ft_strndup.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: artemii <artemii@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/10/04 21:17:06 by mmychaly          #+#    #+#             */
-/*   Updated: 2024/10/10 00:37:57 by artemii          ###   ########.fr       */
+/*   Created: 2024/10/15 01:50:19 by artemii           #+#    #+#             */
+/*   Updated: 2024/10/15 01:51:28 by artemii          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/minishell.h"
+#include "libft.h"
 
-void	launch_here_doc(char **argv, int pipefd[2])
+char	*ft_strndup(const char *src, size_t n)
 {
-	char *line;
+	size_t	i;
+	char	*data;
 
-	line = NULL;
-	close(pipefd[0]);
-	printf("in launch_here_doc\n"); //Supprimer
-	while ((line = get_next_line(0)) != NULL)
+	data = (char *)malloc((n + 1) * sizeof(char));
+	if (!data)
+		return (0);
+	i = 0;
+	while (i < n && src[i] != '\0')
 	{
-		if ((ft_strncmp(argv[2], line, ft_strlen(line) - 1)) == 0)
-		{
-			free(line);
-			break ;
-		}
-		write(pipefd[1], line, ft_strlen(line));
-		free(line);
+		data[i] = src[i];
+		i++;
 	}
-	close(pipefd[1]);
-	exit(0);
+	data[i] = '\0';
+	return (data);
 }
