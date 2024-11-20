@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   parser.c                                           :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: artemii <artemii@student.42.fr>            +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/10/10 01:23:19 by artemii           #+#    #+#             */
-/*   Updated: 2024/10/10 01:39:26 by artemii          ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "../include/minishell.h"
 
 void	free_split(char **args)
@@ -25,141 +13,153 @@ void	free_split(char **args)
 	free(args);
 }
 
-void handle_redirections_and_pipes(t_command *cmd, char **tokens, int *i)
+// Обработка редиректов и установка позиций
+void	handle_redirection(t_cmd *cmd, char **tokens, int *i,
+		int *redir_position)
 {
-    if (ft_strcmp(tokens[*i], "<") == 0) // Если найден оператор ввода
-    {
-        *i += 1;
-        cmd->input_file = ft_strdup(tokens[*i]); // Сохраняем имя файла для ввода
-    }
-    else if (ft_strcmp(tokens[*i], ">") == 0) // Если найден оператор вывода
-    {
-        *i += 1;
-        cmd->output_file = ft_strdup(tokens[*i]); // Сохраняем имя файла для вывода
-    }
-    else if (ft_strcmp(tokens[*i], ">>") == 0) // Если найден оператор добавления
-    {
-        *i += 1;
-        cmd->output_file = ft_strdup(tokens[*i]); // Сохраняем имя файла для добавления
-        cmd->append = 1; // Устанавливаем флаг append
-    }
-    else if (ft_strcmp(tokens[*i], "<<") == 0) // Если найден оператор here_doc
-    {
-        *i += 1;
-        cmd->args = malloc(sizeof(char *) * 2);  // Для here_doc нужен только ограничитель
-        cmd->args[0] = ft_strdup("here_doc");
-        cmd->args[1] = ft_strdup(tokens[*i]); // Ограничитель для here_doc
-        cmd->here_doc = 1; // Устанавливаем флаг here_doc
-    }
-    else if (ft_strcmp(tokens[*i], "|") == 0) // Если найден пайп
-        cmd->is_pipe = 1; // Устанавливаем флаг пайпа
+	if (ft_strcmp(tokens[*i], "<") == 0) // Входной редирект
+	{
+		*i += 1;
+		cmd->input_file = ft_strdup(tokens[*i]);
+		cmd->pos_input = (*redir_position)++;
+	}
+	else if (ft_strcmp(tokens[*i], ">") == 0)
+	{
+		*i += 1;
+		cmd->output_file = ft_strdup(tokens[*i]);
+		cmd->pos_output = (*redir_position)++;
+	}
+	else if (ft_strcmp(tokens[*i], ">>") == 0)
+	{
+		*i += 1;
+		cmd->append_file = ft_strdup(tokens[*i]);
+		cmd->pos_append = (*redir_position)++;
+	}
+	else if (ft_strcmp(tokens[*i], "<<") == 0)
+	{
+		*i += 1;
+		cmd->here_doc_file = ft_strdup(tokens[*i]);
+		cmd->pos_here_doc = (*redir_position)++;
+	}
 }
 
-void handle_arguments(t_command *cmd, char **tokens, int *i, int *arg_idx)
+void	handle_command_args(t_cmd *cmd, char **tokens, int *i, int *arg_idx)
 {
-    cmd->args[*arg_idx] = ft_strdup(tokens[*i]); // Сохраняем аргумент
-    *arg_idx += 1;
+	if (cmd->cmd_arg == NULL)
+	{
+		cmd->cmd_arg = malloc(sizeof(char *) * 100);
+		if (!cmd->cmd_arg)
+			return ;
+		cmd->cmd = ft_strdup(tokens[*i]);
+		if (!cmd->cmd)
+		{
+			free(cmd->cmd_arg);
+			cmd->cmd_arg = NULL;
+			return ;
+		}
+	}
+	cmd->cmd_arg[(*arg_idx)++] = ft_strdup(tokens[*i]);
 }
 
-t_command *parse_input(char *input)
+void	parse_single_command(t_cmd *cmd, char *input, t_data *data)
 {
-    t_command *cmd = malloc(sizeof(t_command));
-    char **tokens = ft_split(input, ' '); // Разбиваем строку на токены
+	int		i;
+	int		arg_idx;
+	int		redir_position;
+	char	**tokens;
+
+	i = 0;
+	arg_idx = 0;
+	redir_position = 1; // Для отслеживания порядка редиректов
+	tokens = ft_split_quotes(input, data);
+	while (tokens[i] != NULL)
+	{
+		if (ft_strcmp(tokens[i], "<") == 0 || ft_strcmp(tokens[i], ">") == 0
+			|| ft_strcmp(tokens[i], ">>") == 0 || ft_strcmp(tokens[i],
+				"<<") == 0)
+			handle_redirection(cmd, tokens, &i, &redir_position);
+		else
+			handle_command_args(cmd, tokens, &i, &arg_idx);
+		i++;
+	}
+	if (arg_idx == 0) // Если аргументы отсутствуют
+	{
+		cmd->cmd_arg = NULL;
+		cmd->cmd = NULL; // Убедимся, что cmd остается пустым
+	}
+	else
+		cmd->cmd_arg[arg_idx] = NULL;
+	free_split(tokens);
+	if (cmd->here_doc_file != NULL) //Если есть слово limiter то запускаем here doc
+		execution_here_doc(cmd, data);
+}
+
+int validate_quotes(const char *input)
+{
     int i = 0;
-    int arg_idx = 0;
+    char quote = '\0';
 
-    // Инициализация полей структуры
-	ft_memset(cmd, 0, sizeof(t_command));
-    cmd->args = malloc(sizeof(char *) * 100); // Максимум 100 аргументов
-
-    // Обработка каждого токена
-    while (tokens[i] != NULL)
-    {
-        if (ft_strcmp(tokens[i], "<") == 0 || ft_strcmp(tokens[i], ">") == 0 ||
-            ft_strcmp(tokens[i], ">>") == 0 || ft_strcmp(tokens[i], "<<") == 0 || ft_strcmp(tokens[i], "|") == 0)
-            handle_redirections_and_pipes(cmd, tokens, &i); // Обрабатываем редиректы и пайпы
-        else
-            handle_arguments(cmd, tokens, &i, &arg_idx); // Обрабатываем обычные аргументы
-        i++;
-    }
-    cmd->args[arg_idx] = NULL; // Завершаем массив аргументов
-    free_split(tokens); // Освобождаем токены
-    return cmd;
-}
-
-// Подсчет количества пайпов в строке
-static int count_pipes(char *input)
-{
-    int count = 0;
-    int i = 0;
     while (input[i])
     {
-        if (input[i] == '|')
-            count++;
+        if ((input[i] == '\'' || input[i] == '"') && quote == '\0')
+            quote = input[i]; // Открытие кавычки
+        else if (input[i] == quote)
+            quote = '\0'; // Закрытие кавычки
         i++;
     }
-    return count;
+    return (quote == '\0'); // Если кавычки закрыты, вернём 1, иначе 0
 }
 
-// Разбор строк с пайпами и их аргументами
-t_command **parse_pipeline(char *input)
-{
-    char **commands = ft_split(input, '|');
-    int num_pipes = count_pipes(input);
-    t_command **parsed_commands = malloc(sizeof(t_command *) * (num_pipes + 2)); // +2 для NULL и последней команды
 
-    int i = 0;
-    while (commands[i] != NULL)
+// Парсинг пайплайна команд
+void	parse_pipeline(t_data *data, char *input)
+{
+    char	**command_tokens;
+    int cmd_count;
+    int i;
+
+    if (!validate_quotes(input))     // Проверяем наличие незакрытых кавычек
     {
-        parsed_commands[i] = parse_input(commands[i]); // Разбираем каждую команду отдельно
-        i++;
+		data->back_in_main = 1;
+        ft_printf("Error: unclosed quotes\n");
+        return ;
     }
-    parsed_commands[i] = NULL; // Завершаем массив команд NULL
-    free_split(commands);
-    return parsed_commands;
+    cmd_count = 0;
+    i = 0;
+    command_tokens = ft_split(input, '|');
+    if (!command_tokens)
+    {
+        return ;
+    }
+    while (command_tokens[cmd_count] != NULL)
+        cmd_count++;
+    data->cmd = malloc(sizeof(t_cmd *) * (cmd_count + 1));
+    if (!data->cmd)
+    {
+        free_split(command_tokens);
+        return ;
+    }
+    data->nb_pipe = cmd_count - 1;
+    while (i < cmd_count)
+    {
+        data->cmd[i] = malloc(sizeof(t_cmd));
+        if (!data->cmd[i])
+        {
+            perror("malloc failed");
+            free_split(command_tokens);
+			free_data_cmd(data); // Освобождаем всё, если выделение не удалось
+            return ;
+        }
+        ft_memset(data->cmd[i], 0, sizeof(t_cmd));
+        parse_single_command(data->cmd[i], command_tokens[i], data);
+		if (data->back_in_main == 1)//Выход из за сигнала SIGINT 
+		{
+			data->cmd[cmd_count] = NULL;//Почему то если не поставить эту инструкцию то если после запуска минишелл запустить команду minishell$ << end и выйти через ctrl C то появляется ошибка сигментации 
+			free_split(command_tokens);
+			return ;
+		}
+	i++;
+    }
+    data->cmd[cmd_count] = NULL;
+    free_split(command_tokens);
 }
-
-/*
-char	**parse_input(char *input)
-{
-	char	**args;
-	char	*token;
-	int		i;
-
-	i = 0;
-	// Выделяем память для аргументов (предположим, что не более 100 аргументов)
-	args = malloc(sizeof(char *) * 100);
-	if (!args)
-		return (NULL);
-	// Разбиваем строку по пробелам
-	token = strtok(input, " ");
-	while (token != NULL)
-	{
-		args[i] = ft_strdup(token); // используем strdup для копирования строки
-		i++;
-		token = strtok(NULL, " ");
-	}
-	args[i] = NULL; // Завершаем массив аргументов NULL
-	return (args);
-}
-char	***parse_pipeline(char *input)
-{
-	char **commands;
-	char ***parsed_commands;
-	int i;
-
-	commands = ft_split(input, '|');
-	parsed_commands = malloc(sizeof(char **) * (count_pipes(input) + 2));
-	if (!parsed_commands)
-		return (NULL);
-	i = 0;
-	while (commands[i])
-	{
-		parsed_commands[i] = parse_input(commands[i]);
-		i++;
-	}
-	parsed_commands[i] = NULL;
-	free_split(commands);
-	return (parsed_commands);
-}
-*/
