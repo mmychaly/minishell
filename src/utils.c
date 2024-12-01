@@ -1,37 +1,76 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   utils.c                                            :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: artemii <artemii@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/11/26 00:52:19 by artemii           #+#    #+#             */
+/*   Updated: 2024/11/26 02:02:38 by artemii          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
 #include "../include/minishell.h"
 
-void free_parsed_commands(t_command **commands)
+void	error_exit(const char *message)
 {
-    int i = 0;
-    int j;
-
-    // Освобождаем каждую команду в массиве
-    while (commands[i])
-    {
-        // Освобождаем аргументы команды
-        j = 0;
-        while (commands[i]->args[j])
-        {
-            free(commands[i]->args[j]);
-            j++;
-        }
-        free(commands[i]->args);  // Освобождаем сам массив аргументов
-
-        // Освобождаем файлы для редиректа, если они существуют
-        if (commands[i]->input_file)
-            free(commands[i]->input_file);
-        if (commands[i]->output_file)
-            free(commands[i]->output_file);
-
-        // Освобождаем саму структуру команды
-        free(commands[i]);
-        i++;
-    }
-    free(commands);  // Освобождаем массив структур
+	perror(message);
+	exit(EXIT_FAILURE);
 }
 
-char	*find_command(char *cmd, char **envp)
+char	**copy_envp(char **envp)
+{
+	int		i;
+	int		count;
+	char	**new_envp;
+
+	count = 0;
+	while (envp[count] != NULL)
+		count++;
+	new_envp = malloc(sizeof(char *) * (count + 1));
+	if (!new_envp)
+		return (NULL);
+	i = 0;
+	while (i < count)
+	{
+		new_envp[i] = ft_strdup(envp[i]);
+		if (!new_envp[i])
+		{
+			while (--i >= 0)
+				free(new_envp[i]);
+			free(new_envp);
+			return (NULL);
+		}
+		i++;
+	}
+	new_envp[count] = NULL;
+	return (new_envp);
+}
+
+void	handle_signals(void)
+{
+	signal(SIGINT, handle_sigint);
+	signal(SIGQUIT, SIG_IGN);
+}
+
+void	reset_data_flags(t_data *data)
+{
+	data->back_in_main = 0;
+	data->builtin_cmd = 0;
+	data->display_builtin_cmd = 0;
+}
+
+void	handle_pid_status(t_data *data, int *exit_status)
+{
+	if (g_pid == -50)
+	{
+		data->exit_status = 130;
+		*exit_status = 130;
+		g_pid = -1;
+	}
+}
+
+/*char	*find_command(char *cmd, char **envp)
 {
 	char	**paths;
 	char	*path;
@@ -58,9 +97,4 @@ char	*find_command(char *cmd, char **envp)
 	}
 	free_split(paths);
 	return (NULL);
-}
-void	error_exit(const char *message)
-{
-	perror(message);
-	exit(EXIT_FAILURE);
-}
+} */
